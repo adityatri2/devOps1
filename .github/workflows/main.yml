@@ -17,4 +17,4 @@ jobs:
           node-version: 18
 
       - name: Run app
-        run: node app.js
+        run: node devops-day1/app.js
