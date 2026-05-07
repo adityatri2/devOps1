@@ -1,0 +1,10 @@
+{
+  "name": "rollup-project",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "sequencer",
+    "da-service"
+  ]
+}

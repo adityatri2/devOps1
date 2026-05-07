@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollup Sequencer Explorer</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f8fafc;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --border: #334155;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--border);
+            animation: fadeIn 1s ease-out;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-test {
+            background-color: var(--success);
+        }
+        .btn-test:hover {
+            background-color: #059669;
+        }
+        .blocks-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+        .block-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: slideUp 0.5s ease-out;
+        }
+        .block-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            border-color: var(--accent);
+        }
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .block-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .tx-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+        .tx-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+        .tx-item:last-child {
+            border-bottom: none;
+        }
+        .amount {
+            font-weight: 600;
+            color: var(--success);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #status {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Rollup Sequencer Explorer</h1>
+            <p>Real-time view of Layer 2 blocks and transactions</p>
+        </header>
+
+        <div class="controls">
+            <button onclick="fetchBlocks()">Refresh Blocks</button>
+            <button class="btn-test" onclick="fireRandomTransactions()">Fire 5 Random TXs</button>
+        </div>
+        
+        <div id="status">Waiting for blocks...</div>
+
+        <div class="blocks-grid" id="blocksContainer">
+            <!-- Blocks will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        async function fetchBlocks() {
+            try {
+                const response = await fetch('/blocks');
+                const data = await response.json();
+                
+                const container = document.getElementById('blocksContainer');
+                const status = document.getElementById('status');
+                
+                if (data.success && data.data.length > 0) {
+                    container.innerHTML = '';
+                    status.textContent = `Showing latest ${data.data.length} blocks. Auto-refreshing every 3s.`;
+                    
+                    data.data.forEach(block => {
+                        const card = document.createElement('div');
+                        card.className = 'block-card';
+                        
+                        const date = new Date(block.created_at).toLocaleTimeString();
+                        const txs = typeof block.transactions === 'string' ? JSON.parse(block.transactions) : block.transactions;
+                        
+                        let txHtml = '';
+                        txs.forEach(tx => {
+                            txHtml += `
+                                <li class="tx-item">
+                                    <span>${tx.from_address} → ${tx.to_address}</span>
+                                    <span class="amount">${tx.amount} ETH</span>
+                                </li>
+                            `;
+                        });
+
+                        card.innerHTML = `
+                            <div class="block-header">
+                                <span class="block-number">Block #${block.block_number}</span>
+                                <span style="font-size: 0.75rem; color: #94a3b8">${date}</span>
+                            </div>
+                            <div>
+                                <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: #94a3b8">
+                                    ${txs.length} Transactions
+                                </div>
+                                <ul class="tx-list">
+                                    ${txHtml}
+                                </ul>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                } else {
+                    status.textContent = 'No blocks produced yet. Fire some transactions!';
+                }
+            } catch (error) {
+                console.error('Error fetching blocks:', error);
+            }
+        }
+
+        async function fireRandomTransactions() {
+            const status = document.getElementById('status');
+            status.textContent = 'Sending transactions...';
+            
+            const users = ['alice', 'bob', 'charlie', 'dave', 'eve'];
+            
+            for(let i=0; i<5; i++) {
+                const from = users[Math.floor(Math.random() * users.length)];
+                let to = users[Math.floor(Math.random() * users.length)];
+                while(to === from) to = users[Math.floor(Math.random() * users.length)];
+                
+                const amount = Math.floor(Math.random() * 100) + 1;
+
+                await fetch('/tx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from, to, amount })
+                });
+            }
+            
+            status.textContent = '5 Transactions queued! Sequencer will pick them up shortly.';
+            setTimeout(fetchBlocks, 1000);
+        }
+
+        // Initial fetch and auto-refresh
+        fetchBlocks();
+        setInterval(fetchBlocks, 3000);
+    </script>
+</body>
+</html>

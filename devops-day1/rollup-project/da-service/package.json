@@ -1,0 +1,11 @@
+{
+  "name": "@rollup/da-service",
+  "version": "1.0.0",
+  "main": "src/daApp.js",
+  "dependencies": {
+    "@rollup/shared": "*",
+    "express": "^4.19.2",
+    "ethers": "^6.16.0",
+    "dotenv": "^16.4.5"
+  }
+}

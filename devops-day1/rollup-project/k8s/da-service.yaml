@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: da-layer
+  labels:
+    app: da-layer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: da-layer
+  template:
+    metadata:
+      labels:
+        app: da-layer
+    spec:
+      containers:
+      - name: da-layer
+        image: rollup-project-backend:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RUN_API
+          value: "false"
+        - name: RUN_SEQUENCER
+          value: "false"
+        - name: RUN_DA
+          value: "true"
+        - name: DA_PORT
+          value: "4000"
+        envFrom:
+        - configMapRef:
+            name: rollup-config
+        - secretRef:
+            name: rollup-secret
+        ports:
+        - containerPort: 4000
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: da-layer
+  labels:
+    app: da-layer
+spec:
+  type: ClusterIP
+  ports:
+  - port: 4000
+    targetPort: 4000
+    name: http
+  selector:
+    app: da-layer

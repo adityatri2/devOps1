@@ -1,0 +1,29 @@
+groups:
+- name: SequencerAlerts
+  rules:
+  - alert: NoActiveLeader
+    expr: sum(sequencer_is_leader) == 0
+    for: 15s
+    labels:
+      severity: critical
+    annotations:
+      summary: "No active sequencer leader detected!"
+      description: "All sequencers have reported isLeader=0 for over 15 seconds. The rollup is halted."
+
+  - alert: RapidLeaderSwitching
+    expr: rate(sequencer_failovers_total[1m]) > 0.05
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Rapid sequencer failovers detected"
+      description: "Sequencer leadership is changing rapidly. Check Redis connectivity and pod stability."
+
+  - alert: ElectionTimeout
+    expr: rate(sequencer_heartbeat_failures_total[1m]) > 0.1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Election heartbeats failing"
+      description: "Sequencers are failing to communicate with Redis for leadership elections."

@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sequencer-network
+  labels:
+    app: sequencer
+spec:
+  ports:
+  - port: 3000
+    name: metrics
+  clusterIP: None
+  selector:
+    app: sequencer
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sequencer
+spec:
+  serviceName: "sequencer-network"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sequencer
+  template:
+    metadata:
+      labels:
+        app: sequencer
+    spec:
+      containers:
+      - name: sequencer
+        image: rollup-project-backend:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RUN_API
+          value: "false"
+        - name: RUN_SEQUENCER
+          value: "true"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: rollup-config
+        - secretRef:
+            name: rollup-secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
